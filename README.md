@@ -1,5 +1,6 @@
 # H^2-MIL
 H^2-MIL: Exploring Hierarchical Representation with Heterogeneous Multiple Instance Learning for Whole Slide Image Analysis
+![Image text](https://github.com/qweghj123/H2-MIL/blob/main/overview.png)
 
 Abstract
 
