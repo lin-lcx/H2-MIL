@@ -1,37 +1,31 @@
 import os
 os.environ['CUDA_VISIBLE_DEVICES'] = '1'
-from RAConv import RAConv
-from IHPool import IHPool
-import copy
-import torch
-from torch_geometric.data import Data
-import matplotlib.pyplot as plt
-from torch_geometric.utils import to_networkx
-import torch.nn as nn
-import torch.nn.functional as F
-from torch_geometric.nn import GCNConv,ChebConv,SAGEConv,GraphConv,LEConv,LayerNorm,GATConv
-from torch.optim import Adam
-from torch_geometric.nn import global_mean_pool,global_max_pool,GlobalAttention,dense_diff_pool,global_add_pool,TopKPooling,ASAPooling,SAGPooling
-import numpy as np
-from torch_geometric.data import DataLoader
-from sklearn.model_selection import train_test_split
-from sklearn.model_selection import KFold 
-import joblib
-import random
-from tqdm import tqdm
-from sklearn.model_selection import StratifiedKFold
-import time as sys_time
-import argparse
-from sklearn.metrics import roc_auc_score
-import logging  
-import os.path
-import time
-import time as sys_time
 import sys
 import argparse
+import copy
+import torch
+import joblib
+import random
+import argparse
+import logging  
+import os.path
+from tqdm import tqdm
+import numpy as np
+import torch.nn as nn
+import time as sys_time
+from RAConv import RAConv
+from IHPool import IHPool
+import time as sys_time
+from torch.optim import Adam
+import torch.nn.functional as F
+from torch_geometric.data import Data
+from sklearn.metrics import roc_auc_score
+from sklearn.model_selection import KFold 
+from torch_geometric.data import DataLoader
+from sklearn.model_selection import train_test_split
+from sklearn.model_selection import StratifiedKFold
+from torch_geometric.nn import global_mean_pool,global_max_pool,GlobalAttention
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
-
 
 class GCN(nn.Module):
     def __init__(self,in_feats,n_hidden,out_classes,drop_out_ratio=0.2,pool1_ratio=0.2,pool2_ratio=4,pool3_ratio=3,mpool_method="global_mean_pool"):
