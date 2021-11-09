@@ -1,23 +1,23 @@
 import os
-from typing import Union, Optional, Callable
-from torch.nn import Parameter
+import time
 import torch
 import math
-import torch.nn.functional as F
-from torch.nn import Linear
-from torch_scatter import scatter
-from torch_sparse import SparseTensor
-import time
-from torch_geometric.nn import LEConv
-from torch_geometric.utils import softmax
-from torch_geometric.nn.pool.topk_pool import topk
-from torch_geometric.utils import add_remaining_self_loops,add_self_loops,sort_edge_index
-from torch_geometric.utils import remove_self_loops
-from torch_sparse import spspmm
 import numpy as np
-from sklearn.metrics.pairwise import cosine_similarity
+from torch.nn import Linear
+from torch.nn import Parameter
+from torch_sparse import spspmm
+import torch.nn.functional as F
 from sklearn.cluster import KMeans
+from torch_scatter import scatter
+from torch_geometric.nn import LEConv
+from torch_sparse import SparseTensor
 from scipy.spatial.distance import cdist
+from torch_geometric.utils import softmax
+from typing import Union, Optional, Callable
+from torch_geometric.nn.pool.topk_pool import topk
+from torch_geometric.utils import remove_self_loops
+from sklearn.metrics.pairwise import cosine_similarity
+from torch_geometric.utils import add_remaining_self_loops,add_self_loops,sort_edge_index
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def uniform(size, tensor):
@@ -186,7 +186,7 @@ class IHPool(torch.nn.Module):
                 _,cosine_sort_index = torch.sort(cosine_dis_2,0)
                 t_cluster_2 = cosine_sort_index[0].to(device)
             
-            new_x_y_index = torch.cat((new_x_y_index,scatter(t_x_y_index_2, t_cluster_2, dim=0, reduce='mean'))).to(device)  #坐标取均值       
+            new_x_y_index = torch.cat((new_x_y_index,scatter(t_x_y_index_2, t_cluster_2, dim=0, reduce='mean'))).to(device)         
             t_cluster_2 += len(set(cluster_2.cpu().numpy()))*2
             
             cluster_2[torch.where(cluster2_from_1==k)] = t_cluster_2 
