@@ -24,6 +24,8 @@ from sklearn.model_selection import KFold
 from torch_geometric.data import DataLoader
 from torch_geometric.utils import to_networkx
 from sklearn.metrics import roc_auc_score
+from sklearn.metrics import confusion_matrix
+from sklearn.metrics import roc_curve
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import train_test_split
 from torch_geometric.nn import GCNConv,ChebConv,SAGEConv,GraphConv,LEConv,LayerNorm,GATConv
@@ -310,20 +312,19 @@ def main(args):
                     batch_loss.backward()
                     optimizer.step()
 
-                acc = return_acc(prediction_array,label_array)
-                auc = return_auc(possibility_array,label_array)
+                auc_of_train = return_auc(possibility_array,label_array)
 
                 label_array_for_val,prediction_array_for_val,possibility_array_for_val,total_loss_for_val,auc_for_val,acc_for_val = val_test_block(model,loss_fun,device,data_for_val,label_for_val)
 
                 label_array_for_test,prediction_array_for_test,possibility_array_for_test,total_loss_for_test,auc_for_test,acc_for_test = val_test_block(model,loss_fun,device,data_for_test,label_for_test)
 
-                if auc_for_val >= best_auc_val_fold and (auc > 0.8 or epoch_num>(epochs-10)):
+                if auc_for_val >= best_auc_val_fold and (auc_of_train > 0.8 or epoch_num>(epochs-10)):
                     best_auc_val_fold = auc_for_val
                     best_auc_test_fold = auc_for_test
                     print(best_auc_val_fold)
                     t_model = copy.deepcopy(model)
                     
-                print("epoch：{:2d}，train_loos：{:.4f},train_auc：{:.4f},val_loos：{:.4f},val_auc：{:.4f},test_loos：{:.4f},test_auc：{:.8f}".format(epoch_num,total_loss_for_train/len(train_index_split),auc,total_loss_for_val/len(val_index_split),auc_for_val,total_loss_for_test/len(test_index),auc_for_test))                    
+                print("epoch：{:2d}，train_loss：{:.4f},train_auc：{:.4f},val_loos：{:.4f},val_auc：{:.4f},test_loos：{:.4f},test_auc：{:.8f}".format(epoch_num,total_loss_for_train/len(train_index_split),auc_of_train,total_loss_for_val/len(val_index_split),auc_for_val,total_loss_for_test/len(test_index),auc_for_test))                    
 
                   
             t_model.eval()
@@ -344,34 +345,82 @@ def main(args):
                         test_res.append(res[0][1].detach().cpu().item())
                         pre_result[data_val_test_single['data_id']] = res.cpu().detach().numpy()[0]              
 #                         print(data_val_test_single['data_id'],',label:', label_val_test_single.cpu().item(),   ',pre:', res.cpu().detach().numpy()[0])
-            acc_of_test = return_acc(test_pre,label_of_test)
             auc_of_test = return_auc(test_res,label_of_test)
             fold_auc.append(auc_of_test)
-            fold_acc.append(acc_of_test) 
             
             print('auc:',auc_of_test)        
-            print('acc:',acc_of_test)  
             
 #             torch.save(t_model.state_dict(), 'your save path')
         
         all_pre_result.append(pre_result)
         all_fold_auc.append(fold_auc)
-        all_fold_acc.append(fold_acc)
         print('seed',seed)
         print('fold auc:',fold_auc,',mean:',np.mean(fold_auc))        
-        print('fold acc:',fold_acc,',mean:',np.mean(fold_acc))
         
 #     joblib.dump(all_pre_result,'your save path')
   
 
-    print('all auc:')           
-    for r in all_fold_auc:
-        print(r)
+    print('all auc:')   
+    print(np.mean(all_fold_auc,1))
     print('mean auc',np.mean(np.array(all_fold_auc)))
-    print('all acc:')           
-    for r in all_fold_acc:
-        print(r)    
-    print('mean acc',np.mean(np.array(all_fold_acc)))            
+    
+    mean_acc= []
+    mean_auc = []
+    mean_Specificity = []
+    mean_Sensitivity = []
+    mean_f1 = []
+    for one_num,one_r in enumerate(all_pre_result):
+
+            k=0
+            label_array = []
+            t_possibility_array = []
+            t_pre = []
+            for p_id in one_r:
+                label_array.append(patient_and_label[p_id])
+                t_possibility_array.append(one_r[p_id][1])
+                t_pre.append(np.argmax(one_r[p_id]))
+                if np.argmax(one_r[p_id]) == patient_and_label[p_id]:
+                    k+=1
+
+            set_possibility_array = list(set(t_possibility_array))
+            set_possibility_array.remove(np.max(t_possibility_array))
+
+            b_f1 = 0
+            b_Sensitivity = 0
+            b_Specificity = 0
+            b_a = 0
+            fpr, tpr, thresholds = roc_curve(label_array, t_possibility_array)
+            for t in thresholds:
+                if t == np.max(t_possibility_array):
+                    continue
+                confusion = confusion_matrix(label_array, t_possibility_array>=t)
+                TP = confusion[1, 1]
+                TN = confusion[0, 0]
+                FP = confusion[0, 1]
+                FN = confusion[1, 0]
+                Sensitivity = TP / float(TP+FN)
+                Specificity = TN / float(TN+FP)
+                a = np.sum(label_array == (t_possibility_array>=t))/len(label_array)
+
+                if Specificity==0 or Sensitivity==0 :
+                    continue
+                f1=2*Specificity*Sensitivity/(Sensitivity+Specificity)
+                if a+f1>=b_a+b_f1:
+                    b_f1=f1
+                    b_Sensitivity=Sensitivity
+                    b_Specificity=Specificity
+                    b_a=a            
+
+            mean_acc.append(b_a)
+            mean_f1.append(b_f1)
+
+    print("all acc")
+    print(mean_acc)
+    print('mean acc',np.mean(mean_acc) )  
+    print("all f1")
+    print(mean_f1)
+    print('mean f1',np.mean(mean_f1)) 
+     
             
             
 def get_params():
