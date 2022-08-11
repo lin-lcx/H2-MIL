@@ -435,9 +435,9 @@ def get_params():
     parser.add_argument("--batch_size", type=int, default=32, help="Data volume of model training once")
     parser.add_argument("--saved_model_path", type=str, default="your save path", help="Save the path prefix of the model")
     parser.add_argument("--out_classes", type=int, default=256, help="Model middle dimension")
-    parser.add_argument("--pool1_ratio", type=float ,default=0.1, help="Proportion of the first pool")
-    parser.add_argument("--pool2_ratio", type=float ,default=4, help="Proportion of the second pool")
-    parser.add_argument("--pool3_ratio", type=float ,default=4, help="Proportion of the third pool")
+    parser.add_argument("--pool1_ratio", type=float ,default=0.1, help="Proportion of the first pool, it can be a ratio or a specific integer")
+    parser.add_argument("--pool2_ratio", type=float ,default=4, help="Proportion of the second pool, it can be a ratio or a specific integer")
+    parser.add_argument("--pool3_ratio", type=float ,default=4, help="Proportion of the third pool, it can be a ratio or a specific integer")
     parser.add_argument("--mpool_method", type=str ,default="global_mean_pool", help="Global pool method")
     
     
