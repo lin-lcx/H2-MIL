@@ -12,6 +12,8 @@ python main.py
 ```
 The test results will be printed out at the end.
 
+## Data
+The processed data was uploaded to https://drive.google.com/drive/folders/1uziA_hjYTlAC1i5Uqv529zqTlLSFCgdu
 
 ## Citation
 - If you found our work useful in your research, please consider citing our works(s) at:
